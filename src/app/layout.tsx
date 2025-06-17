@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Sprout Updates',
+  title: 'Stay Updated',
   description: 'Sign up for development updates from Sprout.',
 };
 

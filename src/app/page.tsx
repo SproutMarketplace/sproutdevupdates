@@ -8,8 +8,8 @@ export default function LandingPage() {
         <Image
           src="/logo.png"
           alt="Sprout Logo"
-          width={500}
-          height={500}
+          width={240}
+          height={64}
           className="h-16 w-auto mb-8"
           priority
           data-ai-hint="company logo"
@@ -29,7 +29,7 @@ export default function LandingPage() {
 
       <footer className="py-8 px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Sprout Updates. All rights reserved.
+          &copy; {new Date().getFullYear()} My Company. All rights reserved.
         </p>
       </footer>
     </div>
