@@ -3,78 +3,104 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  /* Font family is set by Geist in layout.tsx */
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: 45 60% 96%; /* Warm Creamy White */
+    --foreground: 30 40% 20%; /* Deep Earthy Brown */
+
+    --card: 45 60% 98%; /* Slightly Lighter Cream */
+    --card-foreground: 30 40% 20%; /* Deep Earthy Brown */
+
+    --popover: 45 60% 100%; /* Almost White for Popovers */
+    --popover-foreground: 30 40% 20%; /* Deep Earthy Brown */
+
+    --primary: 151 55% 30%; /* New: #22764e - Richer Green */
+    --primary-foreground: 45 60% 98%; /* Very Light Cream (almost white) */
+
+    --secondary: 130 45% 65%; /* Soft Sage Green */
+    --secondary-foreground: 130 50% 25%; /* Dark Sage for text on secondary */
+
+    --muted: 45 50% 92%; /* Muted Cream */
+    --muted-foreground: 30 30% 40%; /* Brownish Gray for muted text */
+
+    --accent: 25 75% 60%; /* Warm Coral/Terracotta */
+    --accent-foreground: 25 60% 15%; /* Dark Brown for text on accent */
+
+    --destructive: 0 72% 51%; /* Standard Red */
+    --destructive-foreground: 0 0% 98%; /* White */
+
+    --border: 45 40% 88%; /* Cream-based Border */
+    --input: 45 40% 90%; /* Cream-based Input Background */
+    --ring: 151 55% 30%; /* New: Primary Green for focus rings */
+
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Sidebar specific colors */
+    --sidebar-background: 130 50% 95%; /* Very Light Sage Green */
+    --sidebar-foreground: 30 40% 20%; /* Deep Earthy Brown */
+    --sidebar-primary: 151 55% 30%; /* New: Primary Green */
+    --sidebar-primary-foreground: 45 60% 98%; /* Very Light Cream */
+    --sidebar-accent: 130 45% 88%; /* Lighter Sage for hover */
+    --sidebar-accent-foreground: 130 50% 25%; /* Dark Sage */
+    --sidebar-border: 130 40% 82%; /* Slightly darker Sage for border */
+    --sidebar-ring: 151 55% 30%; /* New: Primary Green */
+    
+    --chart-1: 151 55% 30%; /* New: Primary Green */
+    --chart-2: 25 75% 60%;  /* Accent Coral/Terracotta */
+    --chart-3: 130 45% 65%; /* Secondary Soft Sage */
+    --chart-4: 35 70% 65%;  /* Complementary Warm Orange/Yellow */
+    --chart-5: 190 50% 60%; /* Muted Teal/Blue */
   }
+
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 140 15% 15%; /* Very Dark Desaturated Forest Green */
+    --foreground: 45 40% 88%; /* Light Creamy Beige */
+
+    --card: 140 15% 18%; /* Darker Green/Brown for cards */
+    --card-foreground: 45 40% 88%; /* Light Creamy Beige */
+
+    --popover: 140 15% 12%; /* Darker Popover Background */
+    --popover-foreground: 45 40% 88%; /* Light Creamy Beige */
+
+    --primary: 151 55% 45%; /* New: Dark mode variant of #22764e */
+    --primary-foreground: 45 60% 98%; /* New: Light cream for contrast */
+
+    --secondary: 130 30% 40%; /* Dark Muted Sage */
+    --secondary-foreground: 130 25% 80%; /* Light Sage text */
+
+    --muted: 140 15% 22%; /* Dark Muted Green/Brown */
+    --muted-foreground: 45 30% 70%; /* Muted Creamy text */
+
+    --accent: 25 65% 65%; /* Lighter/Softer Coral for Dark Mode */
+    --accent-foreground: 25 50% 10%; /* Very Dark Brown for text on accent */
+
+    --destructive: 0 60% 50%; /* Standard Red for Dark Mode */
+    --destructive-foreground: 0 0% 98%; /* White */
+
+    --border: 140 15% 25%; /* Dark Border */
+    --input: 140 15% 28%; /* Dark Input Background */
+    --ring: 151 55% 45%; /* New: Dark Mode Primary Green for focus rings */
+    
+    --radius: 0.5rem;
+
+    /* Sidebar specific colors for dark mode */
+    --sidebar-background: 140 12% 12%; /* Almost Black-Green */
+    --sidebar-foreground: 45 40% 88%; /* Light Creamy Beige text */
+    --sidebar-primary: 151 55% 45%; /* New: Dark Mode Primary Green */
+    --sidebar-primary-foreground: 45 60% 98%; /* New: Light Creamy text */
+    --sidebar-accent: 140 15% 20%; /* Darker Green for hover, slightly lighter than bg */
+    --sidebar-accent-foreground: 45 35% 80%; /* Light Creamy text on hover */
+    --sidebar-border: 140 15% 22%; /* Darker Sidebar Border */
+    --sidebar-ring: 151 55% 45%; /* New: Dark Mode Primary Green */
+
+    --chart-1: 151 55% 45%; /* New: Primary Green DM */
+    --chart-2: 25 65% 65%;  /* Accent Coral DM */
+    --chart-3: 130 30% 40%; /* Secondary Dark Sage DM */
+    --chart-4: 35 60% 55%;  /* Complementary Warm Orange/Yellow DM */
+    --chart-5: 190 40% 50%; /* Muted Teal/Blue DM */
   }
 }
 
@@ -84,5 +110,6 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1; /* Enable ligatures and contextual alternates */
   }
 }
