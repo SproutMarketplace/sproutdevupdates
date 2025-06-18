@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Firebase Admin SDK initialization.
  * This module initializes the Firebase Admin SDK for use in server-side logic,

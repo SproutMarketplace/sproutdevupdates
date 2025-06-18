@@ -1,10 +1,10 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { signUpForUpdatesAction } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef } from 'react';
 import { CheckCircle2, Mail } from 'lucide-react';
 
 const initialState = {
@@ -16,9 +16,9 @@ const initialState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button 
-      type="submit" 
-      disabled={pending} 
+    <Button
+      type="submit"
+      disabled={pending}
       className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
       aria-live="polite"
     >
@@ -38,7 +38,7 @@ function SubmitButton() {
 }
 
 export function EmailForm() {
-  const [state, formAction] = useFormState(signUpForUpdatesAction, initialState);
+  const [state, formAction] = useActionState(signUpForUpdatesAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
