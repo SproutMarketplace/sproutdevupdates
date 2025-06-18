@@ -1,4 +1,7 @@
+
 'use server';
+
+import { db, admin as firebaseAdminInstance } from '@/lib/firebase-admin';
 
 interface FormState {
   message: string;
@@ -15,20 +18,33 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
     return { success: false, message: 'Please enter a valid email address.', timestamp: Date.now() };
   }
 
-  // Simulate saving the email
-  console.log('Email submitted for updates:', email);
+  try {
+    // Check if db and firebaseAdminInstance are available (initialized)
+    if (!db || !firebaseAdminInstance || !firebaseAdminInstance.firestore || !firebaseAdminInstance.firestore.FieldValue) {
+        console.error('Firestore (db) or Firebase Admin instance/FieldValue is not available. SDK might not have initialized correctly.');
+        return { success: false, message: 'Server configuration error. Please try again later.', timestamp: Date.now() };
+    }
 
-  // Simulate a delay to mimic network latency
-  await new Promise(resolve => setTimeout(resolve, 1000));
+    const subscribersCollection = db.collection('subscribers');
+    
+    // Check if email already exists to prevent duplicates
+    const existingSubscriberQuery = await subscribersCollection.where('email', '==', email).limit(1).get();
+    if (!existingSubscriberQuery.empty) {
+      // Email already exists
+      return { success: true, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
+    }
 
-  // In a real application, you would save the email to a database or mailing list here.
-  // For example:
-  // try {
-  //   await db.collection('subscribers').add({ email, subscribedAt: new Date() });
-  // } catch (error) {
-  //   console.error('Failed to save email:', error);
-  //   return { success: false, message: 'Something went wrong. Please try again later.', timestamp: Date.now() };
-  // }
+    // Add new subscriber
+    await subscribersCollection.add({
+      email: email,
+      subscribedAt: firebaseAdminInstance.firestore.FieldValue.serverTimestamp(),
+    });
 
-  return { success: true, message: "Thanks for signing up! We'll keep you posted.", timestamp: Date.now() };
+    return { success: true, message: "Thanks for signing up! We'll keep you posted.", timestamp: Date.now() };
+
+  } catch (error) {
+    console.error('Failed to save email to Firestore:', error);
+    // Log the detailed error on the server, but return a generic message to the client.
+    return { success: false, message: 'Something went wrong while signing up. Please try again later.', timestamp: Date.now() };
+  }
 }
