@@ -10,11 +10,11 @@ export default function LandingPage() {
           alt="Sprout Logo"
           width={720}
           height={192}
-          className="h-48 w-auto mb-12"
+          className="h-48 w-auto"
           priority
           data-ai-hint="company logo"
         />
-        <div className="max-w-xl w-full space-y-8 text-center bg-card p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border">
+        <div className="relative z-10 -mt-16 max-w-xl w-full space-y-8 text-center bg-card p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border">
           <div>
             <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary tracking-tight">
               Stay Updated with Sprout
