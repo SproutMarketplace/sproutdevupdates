@@ -8,9 +8,9 @@ export default function LandingPage() {
         <Image
           src="/sprout.png"
           alt="Sprout Logo"
-          width={360}
-          height={96}
-          className="h-24 w-auto mb-12"
+          width={720}
+          height={192}
+          className="h-48 w-auto mb-12"
           priority
           data-ai-hint="company logo"
         />
