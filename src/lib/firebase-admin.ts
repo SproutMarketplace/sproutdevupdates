@@ -16,12 +16,14 @@ if (!admin.apps.length) {
   const clientEmailEnv = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyEnv = process.env.FIREBASE_PRIVATE_KEY;
 
+  console.log('Attempting Firebase Admin SDK initialization...');
   try {
     if (serviceAccountEnvJson) {
       const serviceAccount = JSON.parse(serviceAccountEnvJson);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
+      console.log('Firebase Admin SDK initialized using FIREBASE_SERVICE_ACCOUNT_JSON.');
     } else if (projectIdEnv && clientEmailEnv && privateKeyEnv) {
       admin.initializeApp({
         credential: admin.credential.cert({
@@ -30,32 +32,40 @@ if (!admin.apps.length) {
           privateKey: privateKeyEnv.replace(/\\n/g, '\n'),
         }),
       });
+      console.log('Firebase Admin SDK initialized using individual environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY).');
     } else {
       // Fallback for environments like Google Cloud Functions or App Engine
       // where GOOGLE_APPLICATION_CREDENTIALS might be set implicitly.
       // This is common in Firebase Studio environments.
       admin.initializeApp();
+      console.log('Firebase Admin SDK initialized using default credentials (e.g., GOOGLE_APPLICATION_CREDENTIALS or Application Default Credentials).');
     }
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error:', error.stack);
+    console.error('Firebase Admin SDK initialization error:', error.message);
+    console.error('Stack trace:', error.stack);
     // If initialization fails, subsequent Firestore operations will fail.
-    // Consider how to handle this case based on application requirements.
   }
+} else {
+  console.log('Firebase Admin SDK already initialized.');
 }
 
 // Export firestore instance and admin namespace
-let db: admin.firestore.Firestore;
-let adminInstance: typeof admin;
+let db: admin.firestore.Firestore | undefined = undefined;
+let adminInstance: typeof admin | undefined = undefined;
 
 try {
-  db = admin.firestore();
-  adminInstance = admin;
-} catch (error) {
+  if (admin.apps.length) { // Ensure an app is initialized before trying to use services
+    db = admin.firestore();
+    adminInstance = admin;
+    console.log('Firestore instance obtained successfully.');
+  } else {
+    console.error('Firebase Admin SDK not initialized, cannot get Firestore instance.');
+  }
+} catch (error: any) {
   console.error("Failed to get Firestore instance or admin namespace. Firebase Admin SDK might not have initialized properly.");
-  // Fallback or rethrow, depending on desired error handling
-  // For now, db and adminInstance might be undefined if admin.firestore() or admin itself throws an error
-  // which can happen if admin.initializeApp() failed silently or was not called.
-  // The action using this will need to check for their existence.
+  console.error('Error details:', error.message);
+  console.error('Stack trace:', error.stack);
+  // db and adminInstance will remain undefined if admin.firestore() or admin itself throws an error.
 }
 
 export { db, adminInstance as admin };
