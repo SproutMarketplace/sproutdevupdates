@@ -4,13 +4,13 @@ import { EmailForm } from '@/components/email-form';
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
-      <main className="flex-grow flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow flex flex-col items-center justify-start py-12 px-4 sm:px-6 lg:px-8">
         <Image
           src="/sprout.png"
           alt="Sprout Logo"
           width={720}
           height={192}
-          className="h-48 w-auto"
+          className="h-48 w-auto mt-4"
           priority
           data-ai-hint="company logo"
         />
