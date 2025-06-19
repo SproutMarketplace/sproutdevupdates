@@ -2,6 +2,7 @@
 'use server';
 
 import { db, admin as firebaseAdminInstance } from '@/lib/firebase-admin';
+import { sendConfirmationEmail } from '@/services/email-service';
 
 interface FormState {
   message: string;
@@ -19,7 +20,6 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
   }
 
   try {
-    // Check if db and firebaseAdminInstance are available (initialized)
     if (!db || !firebaseAdminInstance || !firebaseAdminInstance.firestore || !firebaseAdminInstance.firestore.FieldValue) {
         console.error('Firestore (db) or Firebase Admin instance/FieldValue is not available. SDK might not have initialized correctly.');
         return { success: false, message: 'Server configuration error. Please try again later.', timestamp: Date.now() };
@@ -27,10 +27,11 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
 
     const subscribersCollection = db.collection('subscribers');
     
-    // Check if email already exists to prevent duplicates
     const existingSubscriberQuery = await subscribersCollection.where('email', '==', email).limit(1).get();
     if (!existingSubscriberQuery.empty) {
       // Email already exists
+      // Optionally, send a "you're already signed up" email or handle differently.
+      // For now, we just show the message.
       return { success: true, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
     }
 
@@ -40,11 +41,20 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
       subscribedAt: firebaseAdminInstance.firestore.FieldValue.serverTimestamp(),
     });
 
+    // Attempt to send confirmation email
+    const emailResult = await sendConfirmationEmail(email);
+    if (emailResult.success) {
+      console.log(`Confirmation email successfully sent to ${email}.`);
+    } else {
+      // Log the failure but don't change the overall success status of the sign-up.
+      // The primary action (DB save) was successful.
+      console.warn(`Failed to send confirmation email to ${email}: ${emailResult.message}`);
+    }
+
     return { success: true, message: "Thanks for signing up! We'll keep you posted.", timestamp: Date.now() };
 
   } catch (error) {
-    console.error('Failed to save email to Firestore:', error);
-    // Log the detailed error on the server, but return a generic message to the client.
+    console.error('Error during sign-up process (Firestore or Email):', error);
     return { success: false, message: 'Something went wrong while signing up. Please try again later.', timestamp: Date.now() };
   }
 }

@@ -29,7 +29,7 @@ export default function LandingPage() {
 
       <footer className="py-8 px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} My Company. All rights reserved.
+          &copy; {new Date().getFullYear()} Sprout Marketplace. All rights reserved.
         </p>
       </footer>
     </div>
