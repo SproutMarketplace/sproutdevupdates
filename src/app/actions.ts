@@ -55,6 +55,11 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
 
   } catch (error) {
     console.error('Error during sign-up process (Firestore or Email):', error);
-    return { success: false, message: 'Something went wrong while signing up. Please try again later.', timestamp: Date.now() };
+    // Check if it's a Firestore error specifically or general error
+    let errorMessage = 'Something went wrong while signing up. Please try again later.';
+    if (error instanceof Error && (error.message.includes('firestore') || error.message.includes('Firebase'))) {
+        errorMessage = 'Could not connect to the database. Please try again later.';
+    }
+    return { success: false, message: errorMessage, timestamp: Date.now() };
   }
 }
