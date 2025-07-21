@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
@@ -5,7 +6,7 @@ import { useFormStatus } from 'react-dom';
 import { signUpForUpdatesAction } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Mail } from 'lucide-react';
+import { CheckCircle2, Mail, PartyPopper } from 'lucide-react';
 
 const initialState = {
   message: '',
@@ -48,12 +49,18 @@ export function EmailForm() {
   }, [state.success, state.timestamp]); // Depend on timestamp to re-run effect on new submissions
 
   if (state.success) {
+    const isEarlyBird = state.message.toLowerCase().includes('congratulations');
+    
     return (
       <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30" role="alert">
-        <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
+        {isEarlyBird ? (
+          <PartyPopper className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
+        ) : (
+          <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
+        )}
         <h2 className="text-2xl sm:text-3xl font-semibold text-primary font-headline">{state.message}</h2>
         <p className="text-muted-foreground mt-3 text-base sm:text-lg">
-          You're all set to receive the latest news from Sprout! Keep an eye on your inbox.
+          You're all set! Keep an eye on your inbox for our launch announcement.
         </p>
       </div>
     );

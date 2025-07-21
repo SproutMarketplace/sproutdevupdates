@@ -39,10 +39,14 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
     const subscriberCount = subscribersSnapshot.size;
 
     let rewardTier = 'standard';
+    let successMessage = "Thanks for signing up! We'll keep you posted.";
+
     if (subscriberCount < 100) {
       rewardTier = 'early_bird_3_months'; // First 100 users
+      successMessage = "Congratulations! You're one of our first 100 users and get 3 months of no fees!";
     } else if (subscriberCount < 250) {
       rewardTier = 'early_bird_1_month'; // Next 150 users
+      successMessage = "Congratulations! You've secured 1 month of no fees as an early bird!";
     }
 
     // Add new subscriber with their reward tier
@@ -60,7 +64,7 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
       console.warn(`Failed to send confirmation email to ${email}: ${emailResult.message}`);
     }
 
-    return { success: true, message: "Thanks for signing up! We'll keep you posted.", timestamp: Date.now() };
+    return { success: true, message: successMessage, timestamp: Date.now() };
 
   } catch (error) {
     console.error('Error during sign-up process (Firestore or Email):', error);
