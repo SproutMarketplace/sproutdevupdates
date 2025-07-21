@@ -21,7 +21,7 @@ export default function LandingPage() {
               The Marketplace is About to Sprout.
             </h1>
             <p className="mt-4 text-lg sm:text-xl text-muted-foreground max-w-md mx-auto">
-              Be an early bird! The first 100 users get <strong>3 months of no fees</strong>, and the next 150 get 1 month free. Sign up for launch updates and secure your spot!
+              Be an early bird! The first <strong>100 users</strong> get <strong>3 months of no fees</strong>, and the next <strong>150</strong> get <strong>1 month free</strong>. Sign up for launch updates and secure your spot!
             </p>
           </div>
           <EmailForm />
