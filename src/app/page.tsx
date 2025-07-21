@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { EmailForm } from '@/components/email-form';
 
@@ -17,10 +18,10 @@ export default function LandingPage() {
         <div className="relative z-10 -mt-16 max-w-xl w-full space-y-8 text-center bg-card p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border">
           <div>
             <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary tracking-tight">
-              Stay Updated with Sprout
+              Get Ready for Something Big
             </h1>
             <p className="mt-4 text-lg sm:text-xl text-muted-foreground max-w-md mx-auto">
-              Be the first to know about new features, releases, and special offers. Sign up for our development updates.
+              Be an early bird! The first 100 users get <strong>3 months of no fees</strong>, and the next 150 get 1 month free. Sign up for launch updates and secure your spot!
             </p>
           </div>
           <EmailForm />
