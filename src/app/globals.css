@@ -8,7 +8,7 @@ body {
 
 @layer base {
   :root {
-    --background: 45 60% 96%; /* Warm Creamy White */
+    --background: 0 0% 100%; /* White */
     --foreground: 30 40% 20%; /* Deep Earthy Brown */
 
     --card: 45 60% 98%; /* Slightly Lighter Cream */
@@ -23,8 +23,8 @@ body {
     --secondary: 130 45% 65%; /* Soft Sage Green */
     --secondary-foreground: 130 50% 25%; /* Dark Sage for text on secondary */
 
-    --muted: 45 50% 92%; /* Muted Cream */
-    --muted-foreground: 30 30% 40%; /* Brownish Gray for muted text */
+    --muted: 0 0% 96%; /* Off-white */
+    --muted-foreground: 0 0% 0%; /* Black for muted text */
 
     --accent: 25 75% 60%; /* Warm Coral/Terracotta */
     --accent-foreground: 25 60% 15%; /* Dark Brown for text on accent */
@@ -47,7 +47,7 @@ body {
     --sidebar-accent-foreground: 130 50% 25%; /* Dark Sage */
     --sidebar-border: 130 40% 82%; /* Slightly darker Sage for border */
     --sidebar-ring: 151 55% 30%; /* New: Primary Green */
-    
+
     --chart-1: 151 55% 30%; /* New: Primary Green */
     --chart-2: 25 75% 60%;  /* Accent Coral/Terracotta */
     --chart-3: 130 45% 65%; /* Secondary Soft Sage */
@@ -72,7 +72,7 @@ body {
     --secondary-foreground: 130 25% 80%; /* Light Sage text */
 
     --muted: 140 15% 22%; /* Dark Muted Green/Brown */
-    --muted-foreground: 45 30% 70%; /* Muted Creamy text */
+    --muted-foreground: 0 0% 100%; /* White for muted text in dark mode */
 
     --accent: 25 65% 65%; /* Lighter/Softer Coral for Dark Mode */
     --accent-foreground: 25 50% 10%; /* Very Dark Brown for text on accent */
@@ -83,7 +83,7 @@ body {
     --border: 140 15% 25%; /* Dark Border */
     --input: 140 15% 28%; /* Dark Input Background */
     --ring: 151 55% 45%; /* New: Dark Mode Primary Green for focus rings */
-    
+
     --radius: 0.5rem;
 
     /* Sidebar specific colors for dark mode */
