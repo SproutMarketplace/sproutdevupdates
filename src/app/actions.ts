@@ -1,8 +1,9 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import { auth, db } from '@/lib/firebase-admin';
 import { sendConfirmationEmail } from './send-email';
+import type admin from 'firebase-admin';
 
 interface FormState {
   message: string;
@@ -30,14 +31,12 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
     return { success: false, message: 'Password must be at least 6 characters.', timestamp: Date.now() };
   }
 
-  if (!admin || !admin.firestore || !admin.auth) {
+  if (!db || !auth) {
     const errorMessage = 'CRITICAL: Server is not connected to Firebase services. Please check server logs for Firebase Admin SDK initialization errors.';
     console.error(errorMessage);
     return { success: false, message: errorMessage, timestamp: Date.now() };
   }
 
-  const db = admin.firestore();
-  const auth = admin.auth();
   const usersCollection = db.collection('users');
 
   try {
@@ -117,7 +116,7 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
       userId: userRecord.uid,
       username: name,
       email: email,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp(),
       rewardTier: rewardTier,
       userType: userType,
       referralCode: referralCode,
