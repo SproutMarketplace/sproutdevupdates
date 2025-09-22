@@ -31,15 +31,9 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
     return { success: false, message: 'Password must be at least 6 characters.', timestamp: Date.now() };
   }
 
-  if (!db || !auth) {
-    const errorMessage = 'CRITICAL: Server is not connected to Firebase services. Please check server logs for Firebase Admin SDK initialization errors.';
-    console.error(errorMessage);
-    return { success: false, message: errorMessage, timestamp: Date.now() };
-  }
-
-  const usersCollection = db.collection('users');
-
   try {
+    const usersCollection = db.collection('users');
+
     console.log(`[actions.ts] Checking for existing user: ${email}`);
 
     // Check if user already exists in Firebase Auth
@@ -163,7 +157,9 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
   } catch (error: any) {
     console.error('[actions.ts] Detailed error in signUpForUpdatesAction:', error);
     let publicMessage = 'Something went wrong while signing up. Please try again later.';
-    if(error.code === 'auth/email-already-exists') {
+    if (error.message.includes('Could not initialize Firebase Admin SDK')) {
+      publicMessage = 'Server configuration error. Please contact support.';
+    } else if(error.code === 'auth/email-already-exists') {
       publicMessage = "This email is already signed up!";
     }
     return { success: false, message: publicMessage, timestamp: Date.now() };
