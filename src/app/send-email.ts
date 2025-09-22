@@ -9,16 +9,11 @@ interface EmailParams {
     templateId: number;
 }
 
-const mj = mailjet.apiConnect(
-    process.env.MAILJET_API_KEY!,
-    process.env.MAILJET_API_SECRET!,
-);
-
 export async function sendConfirmationEmail({ to, name, templateId }: EmailParams): Promise<{ success: boolean; message: string }> {
     console.log(`[send-email.ts] Attempting to send confirmation email to: ${to} using Mailjet template ID: ${templateId}.`);
 
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
-        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email.';
+        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your .env.local file.';
         console.error(errorMessage);
         return { success: false, message: errorMessage };
     }
@@ -29,6 +24,10 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
         return { success: false, message: errorMessage };
     }
 
+    const mj = mailjet.apiConnect(
+        process.env.MAILJET_API_KEY,
+        process.env.MAILJET_API_SECRET,
+    );
 
     const request = mj.post('send', { version: 'v3.1' }).request({
         Messages: [
