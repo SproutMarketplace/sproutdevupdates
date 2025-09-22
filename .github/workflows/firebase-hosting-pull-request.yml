@@ -63,6 +63,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.PROD_FIREBASE_SERVICE_ACCOUNT_JSON }}'
+          firebaseServiceAccount: '${{ secrets.TEST_FIREBASE_SERVICE_ACCOUNT_JSON }}'
           projectId: sprout-prod # Always deploy previews to the prod project
           channelId: pr-${{ github.event.number }}--${{ github.head_ref }}
