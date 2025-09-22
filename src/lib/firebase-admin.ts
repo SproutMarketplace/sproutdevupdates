@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Firebase Admin SDK initialization for server-side operations.
  * This module ensures a single instance of the Firebase Admin SDK is initialized
@@ -6,18 +5,26 @@
  */
 import admin from 'firebase-admin';
 
+// Check if the app is already initialized to prevent re-initialization.
 if (!admin.apps.length) {
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (!serviceAccountString) {
+    console.error('CRITICAL: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set.');
+    throw new Error('Server configuration error: Firebase credentials are not set.');
+  }
+
   try {
-    admin.initializeApp();
+    const serviceAccount = JSON.parse(serviceAccountString);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
   } catch (error: any) {
-    console.error('CRITICAL: Failed to initialize Firebase Admin SDK.', error);
-    // This will be caught by the server action and result in a user-facing error.
-    throw new Error('Server configuration error: Could not initialize Firebase Admin SDK.');
+    console.error('CRITICAL: Failed to parse or initialize Firebase Admin SDK. The FIREBASE_SERVICE_ACCOUNT_JSON environment variable may be corrupted or malformed.', error);
+    throw new Error('Server configuration error: Could not initialize Firebase Admin SDK due to invalid credentials.');
   }
 }
 
-
-// Export auth and firestore instances for use in server-side code.
 const auth = admin.auth();
 const db = admin.firestore();
 
