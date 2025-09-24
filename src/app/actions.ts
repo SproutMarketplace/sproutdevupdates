@@ -83,7 +83,6 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
 
     if (!earlyBirdTemplateIdStr || !standardTemplateIdStr) {
       console.error('[actions.ts] CRITICAL: Mailjet template ID environment variables are not set.');
-      // Decide if this is a fatal error. For now, we'll log it and let signup continue without email.
     }
 
     const earlyBirdTemplateId = parseInt(earlyBirdTemplateIdStr || "0");
@@ -159,15 +158,20 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
       console.log(`[actions.ts] Successfully updated referrer.`);
     }
 
-    // Send confirmation email
-    console.log(`[actions.ts] Preparing to send confirmation email to ${email}.`);
-    const emailResult = await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
-    if (!emailResult.success) {
-      console.error(`[actions.ts] User account for ${email} created, but confirmation email failed to send. Reason: ${emailResult.message}`);
-      // Don't block the user from seeing success, but add a note.
-      successMessage += " (Note: There was an issue sending the confirmation email, but your account is safe!)";
-    } else {
-      console.log(`[actions.ts] Successfully sent confirmation email to ${email}.`);
+    // Send confirmation email in a try/catch block to prevent it from crashing the whole action
+    try {
+      console.log(`[actions.ts] Preparing to send confirmation email to ${email}.`);
+      const emailResult = await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
+      if (!emailResult.success) {
+        console.error(`[actions.ts] User account for ${email} created, but confirmation email failed to send. Reason: ${emailResult.message}`);
+        // Don't block the user from seeing success, but add a note.
+        successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
+      } else {
+        console.log(`[actions.ts] Successfully sent confirmation email to ${email}.`);
+      }
+    } catch (emailError: any) {
+      console.error(`[actions.ts] A critical, unhandled error occurred while trying to send an email to ${email}.`, emailError);
+      successMessage += " (Note: Your account was created, but we hit a critical error sending your confirmation email.)";
     }
 
     console.log('[actions.ts] Signup process completed successfully.');
@@ -181,8 +185,6 @@ export async function signUpForUpdatesAction(prevState: FormState, formData: For
       publicMessage = "There was a problem creating your account. Please double-check your details.";
     } else if (error.message.includes('firestore')) {
       publicMessage = "Could not save your user profile. Please try again.";
-    } else if (error.message.includes('Mailjet')) {
-      publicMessage = "Account created, but we couldn't send a confirmation email. Please check back later.";
     }
 
     return { success: false, message: publicMessage, timestamp: Date.now() };
