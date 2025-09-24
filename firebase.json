@@ -1,4 +1,19 @@
 {
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "backendId": "sproutprodbackend",
+      "region": "us-east4"
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "apphosting": {
     "backendId": "sproutprod",
     "rootDir": "/",
