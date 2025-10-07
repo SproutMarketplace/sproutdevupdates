@@ -5,7 +5,7 @@
 
 const nextConfig = {
   /* config options here */
-  output: 'export',
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -32,4 +32,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
