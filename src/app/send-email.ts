@@ -1,6 +1,9 @@
+<<<<<<< Updated upstream
 
 'use server';
 
+=======
+>>>>>>> Stashed changes
 import mailjet from 'node-mailjet';
 
 interface EmailParams {

@@ -166,6 +166,7 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         console.log(`[email-form.tsx] Successfully created user profile for ${email}.`);
 
+<<<<<<< Updated upstream
         // 6. Send confirmation email - REMOVED TO PREVENT SERVER ACTION
         // try {
         //     console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
@@ -175,6 +176,18 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
         //     console.error(`[email-form.tsx] Email sending failed.`, emailError);
         //     successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
         // }
+=======
+        // 6. Send confirmation email
+        // This is now called from the client, but the action itself runs on the server.
+        const emailResult = await sendConfirmationEmail({ to: email, name, templateId });
+        if (!emailResult.success) {
+            console.warn(`[email-form.tsx] Warning: User signup was successful, but confirmation email failed to send to ${email}. Reason: ${emailResult.message}`);
+            // We don't want to block the UI success for this, so we'll just log a warning.
+            // The success message to the user will remain positive.
+        } else {
+            console.log(`[email-form.tsx] Successfully sent confirmation email to ${email}.`);
+        }
+>>>>>>> Stashed changes
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
@@ -188,11 +201,12 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     }
 }
 
-function SubmitButton({ isPending }: { isPending: boolean }) {
+function SubmitButton({ isPending, onClick }: { isPending: boolean; onClick: () => void }) {
     return (
         <Button
-            type="submit"
+            type="button"
             disabled={isPending}
+            onClick={onClick}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
             aria-live="polite"
         >
@@ -322,7 +336,7 @@ export function EmailForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-4">
+            <form className="mt-8 space-y-4">
                 <FormField
                     control={form.control}
                     name="name"
@@ -424,7 +438,7 @@ export function EmailForm() {
                 />
 
                 <div className="pt-4">
-                    <SubmitButton isPending={isPending} />
+                    <SubmitButton isPending={isPending} onClick={form.handleSubmit(onSubmit)} />
                 </div>
 
                 {form.formState.errors.root?.serverError && (
