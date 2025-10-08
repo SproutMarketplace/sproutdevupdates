@@ -1,4 +1,3 @@
-
 'use server';
 
 import mailjet from 'node-mailjet';
@@ -13,7 +12,7 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
     console.log(`[send-email.ts] Attempting to send confirmation email to: ${to} using Mailjet template ID: ${templateId}.`);
 
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
-        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your .env.local file.';
+        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your .env.local file or runtime secret configuration.';
         console.error(errorMessage);
         return { success: false, message: errorMessage };
     }
@@ -44,7 +43,7 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
                 ],
                 TemplateID: templateId,
                 TemplateLanguage: true,
-                Subject: 'Your Spot is Secured at Sprout!', // You can still override the subject here if you want
+                Subject: 'Your Spot is Secured at Sprout!',
                 Variables: {
                     name: name,
                 },

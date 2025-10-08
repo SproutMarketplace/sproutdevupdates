@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -29,9 +28,7 @@ import {
     serverTimestamp,
     runTransaction
 } from 'firebase/firestore';
-
-// This is a new client-side action that will handle the signup.
-// import { sendConfirmationEmail } from '@/app/send-email';
+import { sendConfirmationEmail } from '@/app/send-email';
 
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -94,10 +91,12 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
+        let templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
 
         if (userCount < 100) {
             rewardTier = 'early_bird_1_month_elite';
             successMessage = "Congratulations! You're one of our first 100 users and get 1 month of the elite plan!";
+            templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_TEMPLATE_ID || '0');
         } else {
             successMessage = "You've successfully signed up! While the first 100 spots are taken, you can still get a free month of the elite plan by referring friends.";
         }
@@ -166,15 +165,15 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         console.log(`[email-form.tsx] Successfully created user profile for ${email}.`);
 
-        // 6. Send confirmation email - REMOVED TO PREVENT SERVER ACTION
-        // try {
-        //     console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
-        //     await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
-        //     console.log(`[email-form.tsx] Successfully requested confirmation email for ${email}.`);
-        // } catch (emailError: any) {
-        //     console.error(`[email-form.tsx] Email sending failed.`, emailError);
-        //     successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
-        // }
+        // 6. Send confirmation email (This is a server action)
+        const emailResult = await sendConfirmationEmail({ to: email, name, templateId });
+        if (!emailResult.success) {
+            console.warn(`[email-form.tsx] Warning: User signup was successful, but confirmation email failed to send to ${email}. Reason: ${emailResult.message}`);
+            // We don't want to block the UI success for this, so we'll just log a warning.
+            // The success message to the user will remain positive.
+        } else {
+            console.log(`[email-form.tsx] Successfully sent confirmation email to ${email}.`);
+        }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
@@ -183,6 +182,8 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
         let publicMessage = 'Something went wrong on our end. Please try again later.';
         if (error.code?.startsWith('auth/')) {
             publicMessage = "There was a problem creating your account. Please double-check your details.";
+        } else if (error.message.includes('Mailjet')) {
+            publicMessage = "Your account was created, but we couldn't send the confirmation email right now."
         }
         return { success: false, message: publicMessage, timestamp: Date.now() };
     }
@@ -436,4 +437,3 @@ export function EmailForm() {
         </Form>
     );
 }
-
