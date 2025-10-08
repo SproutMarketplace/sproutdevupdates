@@ -30,9 +30,6 @@ import {
     runTransaction
 } from 'firebase/firestore';
 
-// This is a new client-side action that will handle the signup.
-// import { sendConfirmationEmail } from '@/app/send-email';
-
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
     email: z.string().email({ message: "Please enter a valid email address." }),
@@ -53,6 +50,7 @@ interface FormState {
     timestamp?: number;
     referralCode?: string;
 }
+
 
 // Client-side signup logic
 async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
@@ -94,10 +92,12 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
+        let templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
 
         if (userCount < 100) {
             rewardTier = 'early_bird_1_month_elite';
             successMessage = "Congratulations! You're one of our first 100 users and get 1 month of the elite plan!";
+            templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_TEMPLATE_ID || '0');
         } else {
             successMessage = "You've successfully signed up! While the first 100 spots are taken, you can still get a free month of the elite plan by referring friends.";
         }
@@ -166,28 +166,23 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         console.log(`[email-form.tsx] Successfully created user profile for ${email}.`);
 
-<<<<<<< Updated upstream
-        // 6. Send confirmation email - REMOVED TO PREVENT SERVER ACTION
-        // try {
-        //     console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
-        //     await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
-        //     console.log(`[email-form.tsx] Successfully requested confirmation email for ${email}.`);
-        // } catch (emailError: any) {
-        //     console.error(`[email-form.tsx] Email sending failed.`, emailError);
-        //     successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
-        // }
-=======
-        // 6. Send confirmation email
-        // This is now called from the client, but the action itself runs on the server.
-        const emailResult = await sendConfirmationEmail({ to: email, name, templateId });
-        if (!emailResult.success) {
-            console.warn(`[email-form.tsx] Warning: User signup was successful, but confirmation email failed to send to ${email}. Reason: ${emailResult.message}`);
-            // We don't want to block the UI success for this, so we'll just log a warning.
-            // The success message to the user will remain positive.
-        } else {
-            console.log(`[email-form.tsx] Successfully sent confirmation email to ${email}.`);
+        // 6. Send confirmation email by calling the API route
+        try {
+            const response = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: email, name, templateId }),
+            });
+            const emailResult = await response.json();
+            if (!emailResult.success) {
+                console.warn(`[email-form.tsx] Warning: User signup was successful, but confirmation email failed to send to ${email}. Reason: ${emailResult.message}`);
+            } else {
+                console.log(`[email-form.tsx] Successfully queued confirmation email to ${email}.`);
+            }
+        } catch (apiError) {
+            console.warn(`[email-form.tsx] Warning: User signup was successful, but API call to send email failed for ${email}.`, apiError);
         }
->>>>>>> Stashed changes
+
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
@@ -201,12 +196,11 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     }
 }
 
-function SubmitButton({ isPending, onClick }: { isPending: boolean; onClick: () => void }) {
+function SubmitButton({ isPending }: { isPending: boolean }) {
     return (
         <Button
-            type="button"
+            type="submit"
             disabled={isPending}
-            onClick={onClick}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
             aria-live="polite"
         >
@@ -336,7 +330,7 @@ export function EmailForm() {
 
     return (
         <Form {...form}>
-            <form className="mt-8 space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-4">
                 <FormField
                     control={form.control}
                     name="name"
@@ -438,7 +432,7 @@ export function EmailForm() {
                 />
 
                 <div className="pt-4">
-                    <SubmitButton isPending={isPending} onClick={form.handleSubmit(onSubmit)} />
+                    <SubmitButton isPending={isPending} />
                 </div>
 
                 {form.formState.errors.root?.serverError && (
@@ -450,4 +444,3 @@ export function EmailForm() {
         </Form>
     );
 }
-
