@@ -69,7 +69,7 @@ jobs:
       MAILJET_API_SECRET: ${{ secrets.MAILJET_API_SECRET }}
       MAILJET_SENDER_EMAIL: ${{ secrets.MAILJET_SENDER_EMAIL }}
       MAILJET_TEMPLATE_ID: ${{ secrets.MAILJET_TEMPLATE_ID }}
-      MAILJET_STANDARD_TEMPLATE_ID: ${{ secrets.MAILJET_STANDARD_TEMPLATE_ID }}
+      MAILJET_STANDARD_TEMPLATE_I_D: ${{ secrets.MAILJET_STANDARD_TEMPLATE_ID }}
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
