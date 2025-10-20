@@ -1,13 +1,14 @@
 
 import Image from 'next/image';
-import { EmailForm } from '@/components/email-form';
+import { EmailFormWrapper } from '@/components/email-form-wrapper';
+import { EnvTest } from '@/components/env-test';
 import { Leaf, Users, HeartHandshake, Instagram, Twitter, CheckCircle, Facebook } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LandingPage() {
     return (
-        <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
-            <header className="px-4 sm:px-6 lg:px-8 flex justify-center py-4 bg-muted border-b border-border z-10">
+        <div className="flex flex-col min-h-screen bg-background text-foreground font-body" suppressHydrationWarning>
+            <header className="px-4 sm:px-6 lg:px-8 flex justify-center py-4 bg-muted border-b border-border z-10" suppressHydrationWarning>
                 <Image
                     src="/sprout.png"
                     alt="Sprout Logo"
@@ -19,12 +20,12 @@ export default function LandingPage() {
                 />
             </header>
 
-            <main className="w-full flex-1 flex flex-col">
-                <section className="relative overflow-hidden">
-                    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 z-10">
-                        <div className="grid md:grid-cols-2 gap-12 items-center">
+            <main className="w-full flex-1 flex flex-col" suppressHydrationWarning>
+                <section className="relative overflow-hidden" suppressHydrationWarning>
+                    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 z-10" suppressHydrationWarning>
+                        <div className="grid md:grid-cols-2 gap-12 items-center" suppressHydrationWarning>
                             {/* Left Column: Explainer */}
-                            <div className="space-y-6 pr-8">
+                            <div className="space-y-6 pr-8" suppressHydrationWarning>
                                 <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary tracking-tight animate-fade-in-down">
                                     The Marketplace is About to Sprout.
                                 </h1>
@@ -34,12 +35,12 @@ export default function LandingPage() {
                                 <p className="text-lg sm:text-xl text-muted-foreground animate-fade-in-down" style={{ animationDelay: '0.3s' }}>
                                     Sign up for launch updates and secure your spot for the future of plant and fungi marketplaces!
                                 </p>
-                                <div className="space-y-4 text-muted-foreground animate-fade-in-down" style={{ animationDelay: '0.4s' }}>
-                                    <div className="flex items-start gap-3">
+                                <div className="space-y-4 text-muted-foreground animate-fade-in-down" style={{ animationDelay: '0.4s' }} suppressHydrationWarning>
+                                    <div className="flex items-start gap-3" suppressHydrationWarning>
                                         <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                                         <p><strong>For Sellers:</strong> Reach a dedicated audience of enthusiasts, manage your inventory with powerful tools, and benefit from our secure and streamlined trading process.</p>
                                     </div>
-                                    <div className="flex items-start gap-3">
+                                    <div className="flex items-start gap-3" suppressHydrationWarning>
                                         <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                                         <p><strong>For Buyers:</strong> Discover rare and unique species you won't find anywhere else. Connect with trusted sellers and grow your collection and skills with confidence.</p>
                                     </div>
@@ -47,22 +48,27 @@ export default function LandingPage() {
                             </div>
 
                             {/* Right Column: Signup Form */}
-                            <div className="relative">
-                                <div className="relative w-full bg-muted p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border z-10">
-                                    <EmailForm />
+                            <div className="relative" suppressHydrationWarning>
+                                <div className="relative w-full bg-muted p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border z-10" suppressHydrationWarning>
+                                    <EmailFormWrapper />
+                                    
+                                    {/* Temporary Environment Test - Remove after debugging */}
+                                    <div className="mt-8">
+                                        <EnvTest />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <section className="w-full bg-background py-20 sm:py-24 z-10">
-                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <section className="w-full bg-background py-20 sm:py-24 z-10" suppressHydrationWarning>
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8" suppressHydrationWarning>
                         <h2 className="text-3xl sm:text-4xl font-bold text-center text-primary font-headline mb-12">
                             A Growing Marketplace for Plant & Fungi Lovers
                         </h2>
-                        <div className="grid md:grid-cols-3 gap-10 text-center">
-                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up">
+                        <div className="grid md:grid-cols-3 gap-10 text-center" suppressHydrationWarning>
+                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up" suppressHydrationWarning>
                                 <div className="bg-primary/10 p-5 rounded-full mb-5 border border-primary/20">
                                     <Leaf className="w-10 h-10 text-primary" />
                                 </div>
@@ -71,7 +77,7 @@ export default function LandingPage() {
                                     Explore a vast, user-powered marketplace to find rare and unique plants & fungi. Securely trade your own cuttings, plants, fungi, and supplies with others.
                                 </p>
                             </div>
-                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up" style={{ animationDelay: '0.2s' }} suppressHydrationWarning>
                                 <div className="bg-primary/10 p-5 rounded-full mb-5 border border-primary/20">
                                     <Users className="w-10 h-10 text-primary" />
                                 </div>
@@ -80,7 +86,7 @@ export default function LandingPage() {
                                     Connect with a vibrant community of plant & fungi enthusiasts. Follow other traders, share tips, and grow your network of green-thumbed friends.
                                 </p>
                             </div>
-                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                            <div className="flex flex-col items-center p-6 bg-card/50 rounded-lg border border-border/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/20 animate-fade-in-up" style={{ animationDelay: '0.4s' }} suppressHydrationWarning>
                                 <div className="bg-primary/10 p-5 rounded-full mb-5 border border-primary/20">
                                     <HeartHandshake className="w-10 h-10 text-primary" />
                                 </div>
@@ -94,9 +100,9 @@ export default function LandingPage() {
                 </section>
             </main>
 
-            <footer className="w-full bg-muted py-6 px-4 sm:px-6 lg:px-8 border-t border-border mt-auto z-10">
-                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-6">
-                    <div className="flex items-center gap-4">
+            <footer className="w-full bg-muted py-6 px-4 sm:px-6 lg:px-8 border-t border-border mt-auto z-10" suppressHydrationWarning>
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-6" suppressHydrationWarning>
+                    <div className="flex items-center gap-4" suppressHydrationWarning>
                         <Image
                             src="/sprout.png"
                             alt="Sprout Logo"
@@ -109,7 +115,7 @@ export default function LandingPage() {
                             &copy; 2025 Sprout Marketplace, LLC. All rights reserved.
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4" suppressHydrationWarning>
                         <Link href="https://www.instagram.com/sprout.marketplace/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                             <Instagram className="w-6 h-6 text-muted-foreground hover:text-primary transition-colors" />
                         </Link>

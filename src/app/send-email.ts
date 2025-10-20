@@ -2,6 +2,7 @@
 'use server';
 
 import mailjet from 'node-mailjet';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 interface EmailParams {
     to: string;
@@ -12,8 +13,20 @@ interface EmailParams {
 export async function sendConfirmationEmail({ to, name, templateId }: EmailParams): Promise<{ success: boolean; message: string }> {
     console.log(`[send-email.ts] Attempting to send confirmation email to: ${to} using Mailjet template ID: ${templateId}.`);
 
+    // Initialize Firebase Admin SDK
+    try {
+        const { auth, db } = getFirebaseAdmin();
+        if (!auth || !db) {
+            throw new Error('Firebase Admin SDK not properly initialized');
+        }
+        console.log('[send-email.ts] Firebase Admin SDK initialized successfully.');
+    } catch (error: any) {
+        console.error('[send-email.ts] Firebase Admin SDK initialization failed:', error);
+        return { success: false, message: 'Server configuration error. Please try again later.' };
+    }
+
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
-        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your .env.local file.';
+        const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your environment configuration.';
         console.error(errorMessage);
         return { success: false, message: errorMessage };
     }

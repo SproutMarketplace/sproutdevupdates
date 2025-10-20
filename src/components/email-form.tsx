@@ -242,6 +242,7 @@ function ReferralDisplay({ code }: { code: string }) {
 export function EmailForm() {
     const [state, setState] = useState<FormState>({ success: false, message: '' });
     const [isPending, startTransition] = useTransition();
+    const [isClient, setIsClient] = useState(false);
 
     const form = useForm<SignupFormValues>({
         resolver: zodResolver(signupSchema),
@@ -255,6 +256,7 @@ export function EmailForm() {
     });
 
     useEffect(() => {
+        setIsClient(true);
         const storedStateRaw = localStorage.getItem('sprout_signup_state');
         if (storedStateRaw) {
             try {
@@ -270,8 +272,23 @@ export function EmailForm() {
 
     const onSubmit = (data: SignupFormValues) => {
         startTransition(async () => {
-            const result = await signUpClientSide(data);
-            setState(result);
+            try {
+                console.log('[email-form.tsx] Starting form submission with data:', { 
+                    email: data.email, 
+                    name: data.name,
+                    userType: data.userType 
+                });
+                const result = await signUpClientSide(data);
+                console.log('[email-form.tsx] Form submission result:', result);
+                setState(result);
+            } catch (error: any) {
+                console.error('[email-form.tsx] Form submission failed:', error);
+                setState({
+                    success: false,
+                    message: 'An unexpected error occurred. Please try again.',
+                    timestamp: Date.now()
+                });
+            }
         });
     };
 
@@ -296,6 +313,20 @@ export function EmailForm() {
         setState({ success: false, message: '' });
         form.reset();
     };
+
+    // Prevent hydration mismatch by not rendering success state until client-side
+    if (!isClient) {
+        return (
+            <div className="mt-8 space-y-4">
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+                <div className="animate-pulse bg-muted h-12 rounded"></div>
+            </div>
+        );
+    }
 
     if (state.success) {
         const isEarlyBird = state.message.toLowerCase().includes('congratulations');
