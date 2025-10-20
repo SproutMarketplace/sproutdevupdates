@@ -13,6 +13,7 @@ interface EmailParams {
 export async function sendConfirmationEmail({ to, name, templateId }: EmailParams): Promise<{ success: boolean; message: string }> {
     console.log(`[send-email.ts] Attempting to send confirmation email to: ${to} using Mailjet template ID: ${templateId}.`);
     console.log(`[send-email.ts] MAILJET_SENDER_EMAIL being used: ${process.env.MAILJET_SENDER_EMAIL}`);
+    console.log(`[send-email.ts] Domain context: ${process.env.VERCEL_URL || 'localhost'}`);
 
     // Initialize Firebase Admin SDK (optional for email sending)
     try {
@@ -24,6 +25,7 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
         }
     } catch (error: any) {
         console.error('[send-email.ts] Firebase Admin SDK initialization failed, continuing with email only:', error);
+        // Don't throw the error, just log it and continue with email sending
     }
 
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
