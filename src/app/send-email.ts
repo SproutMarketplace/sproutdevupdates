@@ -2,7 +2,7 @@
 'use server';
 
 import mailjet from 'node-mailjet';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin-simple';
 
 interface EmailParams {
     to: string;
@@ -12,17 +12,18 @@ interface EmailParams {
 
 export async function sendConfirmationEmail({ to, name, templateId }: EmailParams): Promise<{ success: boolean; message: string }> {
     console.log(`[send-email.ts] Attempting to send confirmation email to: ${to} using Mailjet template ID: ${templateId}.`);
+    console.log(`[send-email.ts] MAILJET_SENDER_EMAIL being used: ${process.env.MAILJET_SENDER_EMAIL}`);
 
-    // Initialize Firebase Admin SDK
+    // Initialize Firebase Admin SDK (optional for email sending)
     try {
         const { auth, db } = getFirebaseAdmin();
-        if (!auth || !db) {
-            throw new Error('Firebase Admin SDK not properly initialized');
+        if (auth && db) {
+            console.log('[send-email.ts] Firebase Admin SDK initialized successfully.');
+        } else {
+            console.log('[send-email.ts] Firebase Admin SDK not available, continuing with email only.');
         }
-        console.log('[send-email.ts] Firebase Admin SDK initialized successfully.');
     } catch (error: any) {
-        console.error('[send-email.ts] Firebase Admin SDK initialization failed:', error);
-        return { success: false, message: 'Server configuration error. Please try again later.' };
+        console.error('[send-email.ts] Firebase Admin SDK initialization failed, continuing with email only:', error);
     }
 
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
@@ -46,7 +47,7 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
         Messages: [
             {
                 From: {
-                    Email: process.env.MAILJET_SENDER_EMAIL,
+                    Email: "info@sproutmarketplace.app",
                     Name: 'Sprout Marketplace',
                 },
                 To: [
