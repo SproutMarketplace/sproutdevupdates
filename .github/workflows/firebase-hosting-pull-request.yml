@@ -20,7 +20,7 @@ jobs:
     environment: Production
     # These environment variables are for your PRODUCTION environment (sprout-prod)
     env:
-      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.PROD_FIREBASE_SERVICE_ACCOUNT_JSON }}
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.PROD_NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.PROD_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.PROD_NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
@@ -41,6 +41,10 @@ jobs:
           projectId: sprout-prod-4280b
           channelId: live
           firebaseServiceAccount: '${{ env.FIREBASE_SERVICE_ACCOUNT_JSON }}'
+          runtimeSecrets: |
+            MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}
+            MAILJET_API_SECRET=${{ secrets.MAILJET_API_SECRET }}
+            MAILJET_SENDER_EMAIL=${{ secrets.MAILJET_SENDER_EMAIL }}
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
 
@@ -75,5 +79,9 @@ jobs:
           projectId: sprout-prod-4280b # Deploy PR previews to the prod project for now
           channelId: pr-${{ github.event.number }}--${{ github.head_ref }}
           firebaseServiceAccount: '${{ env.FIREBASE_SERVICE_ACCOUNT_JSON }}'
+          runtimeSecrets: |
+            MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}
+            MAILJET_API_SECRET=${{ secrets.MAILJET_API_SECRET }}
+            MAILJET_SENDER_EMAIL=${{ secrets.MAILJET_SENDER_EMAIL }}
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
