@@ -2,7 +2,7 @@
 'use server';
 
 import mailjet from 'node-mailjet';
-import { getFirebaseAdmin } from '@/lib/firebase-admin-simple';
+// import { getFirebaseAdmin } from '@/lib/firebase-admin-simple'; // Temporarily disabled
 
 interface EmailParams {
     to: string;
@@ -16,17 +16,17 @@ export async function sendConfirmationEmail({ to, name, templateId }: EmailParam
     console.log(`[send-email.ts] Domain context: ${process.env.VERCEL_URL || 'localhost'}`);
 
     // Initialize Firebase Admin SDK (optional for email sending)
-    try {
-        const { auth, db } = getFirebaseAdmin();
-        if (auth && db) {
-            console.log('[send-email.ts] Firebase Admin SDK initialized successfully.');
-        } else {
-            console.log('[send-email.ts] Firebase Admin SDK not available, continuing with email only.');
-        }
-    } catch (error: any) {
-        console.error('[send-email.ts] Firebase Admin SDK initialization failed, continuing with email only:', error);
-        // Don't throw the error, just log it and continue with email sending
-    }
+    // try {
+    //     const { auth, db } = getFirebaseAdmin();
+    //     if (auth && db) {
+    //         console.log('[send-email.ts] Firebase Admin SDK initialized successfully.');
+    //     } else {
+    //         console.log('[send-email.ts] Firebase Admin SDK not available, continuing with email only.');
+    //     }
+    // } catch (error: any) {
+    //     console.error('[send-email.ts] Firebase Admin SDK initialization failed, continuing with email only:', error);
+    //     // Don't throw the error, just log it and continue with email sending
+    // }
 
     if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET || !process.env.MAILJET_SENDER_EMAIL) {
         const errorMessage = '[send-email.ts] CRITICAL: Mailjet environment variables are not set. Cannot send email. Please check your environment configuration.';

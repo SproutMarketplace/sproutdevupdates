@@ -31,7 +31,7 @@ import {
 } from 'firebase/firestore';
 
 // This is a new client-side action that will handle the signup.
-// import { sendConfirmationEmail } from '@/app/send-email';
+import { sendConfirmationEmail } from '@/app/send-email';
 
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -166,15 +166,19 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         console.log(`[email-form.tsx] Successfully created user profile for ${email}.`);
 
-        // 6. Send confirmation email - REMOVED TO PREVENT SERVER ACTION
-        // try {
-        //     console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
-        //     await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
-        //     console.log(`[email-form.tsx] Successfully requested confirmation email for ${email}.`);
-        // } catch (emailError: any) {
-        //     console.error(`[email-form.tsx] Email sending failed.`, emailError);
-        //     successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
-        // }
+        // 6. Send confirmation email
+        try {
+            console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
+            // Use the appropriate template based on reward tier
+            const emailTemplateId = rewardTier === 'early_bird_1_month_elite' 
+                ? 7257464  // Early bird template
+                : 7257272; // Standard template
+            await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
+            console.log(`[email-form.tsx] Successfully requested confirmation email for ${email}.`);
+        } catch (emailError: any) {
+            console.error(`[email-form.tsx] Email sending failed.`, emailError);
+            successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
+        }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
@@ -343,13 +347,11 @@ export function EmailForm() {
                     Your account is created and your spot is secured! We'll send you an email the moment we go live.
                 </p>
                 {state.referralCode && <ReferralDisplay code={state.referralCode} />}
-                <Button onClick={handleReset} variant="outline" className="mt-6">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Test Another Sign-up
-                </Button>
+                
             </div>
         );
     }
+    
 
     return (
         <Form {...form}>

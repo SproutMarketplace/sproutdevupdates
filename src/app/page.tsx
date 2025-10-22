@@ -1,7 +1,6 @@
 
 import Image from 'next/image';
 import { EmailFormWrapper } from '@/components/email-form-wrapper';
-import { EnvTest } from '@/components/env-test';
 import { Leaf, Users, HeartHandshake, Instagram, Twitter, CheckCircle, Facebook } from 'lucide-react';
 import Link from 'next/link';
 
@@ -51,11 +50,6 @@ export default function LandingPage() {
                             <div className="relative" suppressHydrationWarning>
                                 <div className="relative w-full bg-muted p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-border z-10" suppressHydrationWarning>
                                     <EmailFormWrapper />
-                                    
-                                    {/* Temporary Environment Test - Remove after debugging */}
-                                    <div className="mt-8">
-                                        <EnvTest />
-                                    </div>
                                 </div>
                             </div>
                         </div>

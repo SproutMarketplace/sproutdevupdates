@@ -34,3 +34,5 @@ gh secret set MAILJET_SENDER_EMAIL --body "info@sproutmarketplace.app"
 2. **Test your form** at: https://sprout-prod-4280b.web.app
 
 The email will now be sent from `info@sproutmarketplace.app` instead of the previous email address.
+
+

@@ -3,11 +3,10 @@
 
 name: Deploy to Firebase Hosting
 on:
-  # Temporarily disabled until we fix the deployment
-  # push:
-  #   branches:
-  #     - master
-  # pull_request:
+  push:
+    branches:
+      - master
+  pull_request:
   # We can leave this empty, or specify branches like master, main, etc.
   # An empty block here means "run on all pull requests".
 

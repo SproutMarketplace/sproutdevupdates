@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to create and read their own user documents
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow creating new user documents during signup (when auth might not be set yet)
+      allow create: if true;
+    }
+    
+    // Allow reading user count for signup process
+    match /users/{document} {
+      allow read: if true; // Allow reading user count without authentication
+    }
+    
+    // Allow reading/writing signups collection for email signups
+    match /signups/{document} {
+      allow read, write: if true; // Allow anonymous signups
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
