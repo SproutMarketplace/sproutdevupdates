@@ -227,14 +227,16 @@ export function EmailForm() {
     });
 
     useEffect(() => {
-        const storedStateRaw = localStorage.getItem('sprout_signup_state');
-        if (storedStateRaw) {
-            try {
-                const storedState = JSON.parse(storedStateRaw);
-                if(storedState.success) {
-                    setState(storedState);
-                }
-            } catch(e) {}
+        if (typeof window !== 'undefined') {
+            const storedStateRaw = localStorage.getItem('sprout_signup_state');
+            if (storedStateRaw) {
+                try {
+                    const storedState = JSON.parse(storedStateRaw);
+                    if(storedState && storedState.success) {
+                        setState(storedState);
+                    }
+                } catch(e) {}
+            }
         }
     }, []);
 
@@ -246,7 +248,7 @@ export function EmailForm() {
     };
 
     useEffect(() => {
-        if (state.timestamp && !state.success) {
+        if (state.timestamp && !state.success && state.message) {
             form.setError("root.serverError", { message: state.message });
         }
         if (state.success) {
@@ -256,7 +258,8 @@ export function EmailForm() {
     }, [state, form]);
 
     if (state.success) {
-        const isEarlyBird = state.message?.toLowerCase().includes('congratulations');
+        const safeMessage = state.message || "Thank you!";
+        const isEarlyBird = safeMessage.toLowerCase().includes('congratulations');
 
         return (
             <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30">
@@ -265,7 +268,7 @@ export function EmailForm() {
                 ) : (
                     <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
                 )}
-                <h2 className="text-2xl sm:text-3xl font-semibold text-primary font-headline">{state.message}</h2>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-primary font-headline">{safeMessage}</h2>
                 <p className="text-muted-foreground mt-3 text-base sm:text-lg">
                     Your account is created and your spot is secured! We'll send you an email the moment we go live.
                 </p>
@@ -358,7 +361,7 @@ export function EmailForm() {
                 <div className="pt-4">
                     <SubmitButton isPending={isPending} />
                     <p className="text-xs text-muted-foreground text-center mt-3 italic">
-                        * Currently accepting waitlist sign-ups for **U.S. Residents Only**. *
+                        * Currently accepting waitlist sign-ups for <strong>U.S. Residents Only</strong>. *
                     </p>
                 </div>
 
