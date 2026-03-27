@@ -77,7 +77,7 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             const usersSnapshot = await getCountFromServer(usersCollection);
             userCount = usersSnapshot.data().count;
         } catch (e) {
-            console.error("Error fetching user count:", e);
+            // Fallback if count fails
         }
 
         let rewardTier = 'standard';
@@ -140,18 +140,17 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
                     body: JSON.stringify({ to: cleanEmail, name: cleanName, templateId }),
                 });
             } catch (apiError) {
-                console.warn("Email API call failed:", apiError);
+                // Optional email failure
             }
         }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
     } catch (error: any) {
-        console.error("Signup error:", error);
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
-        return { success: false, message: "Something went wrong. Please check your connection and try again.", timestamp: Date.now() };
+        return { success: false, message: "Something went wrong. Please try again later.", timestamp: Date.now() };
     }
 }
 
@@ -211,7 +210,6 @@ export function EmailForm() {
     const [isPending, startTransition] = useTransition();
     const [isMounted, setIsMounted] = useState(false);
 
-    // Hydration safety: only run after mounting on client
     useEffect(() => {
         setIsMounted(true);
         const storedStateRaw = localStorage.getItem('sprout_signup_state');
@@ -222,10 +220,21 @@ export function EmailForm() {
                     setState(storedState);
                 }
             } catch(e) {
-                console.error("Failed to parse stored state");
+                // Silently fail parsing
             }
         }
     }, []);
+
+    const form = useForm<SignupFormValues>({
+        resolver: zodResolver(signupSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            referralCode: "",
+        },
+    });
 
     const onSubmit = (data: SignupFormValues) => {
         startTransition(async () => {
@@ -236,29 +245,36 @@ export function EmailForm() {
 
     useEffect(() => {
         if (state.timestamp && !state.success && state.message) {
-            form.setError("root.serverError", { message: state.message });
+            form.setError("root.serverError", {
+                message: state.message,
+            });
         }
-        if (state.success) {
+        if (state.success && isMounted) {
             form.reset();
             localStorage.setItem('sprout_signup_state', JSON.stringify(state));
         }
-    }, [state]);
+    }, [state, isMounted]);
 
-    const form = useForm<SignupFormValues>({
-        resolver: zodResolver(signupSchema),
-        defaultValues: { name: "", email: "", password: "", confirmPassword: "", referralCode: "" },
-    });
-
-    // Prevents hydration mismatch crash
-    if (!isMounted) return <div className="min-h-[400px]" />;
+    // Prevent Hydration Error: Only render after the component is mounted on the client
+    if (!isMounted) {
+        return <div className="min-h-[400px]" />;
+    }
 
     if (state.success) {
-        const isEarlyBird = (state.message || '').toLowerCase().includes('congratulations');
+        const safeMessage = state.message || '';
+        const isEarlyBird = safeMessage.toLowerCase().includes('congratulations');
+
         return (
             <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30">
-                {isEarlyBird ? <PartyPopper className="w-16 h-16 text-primary mb-4" /> : <CheckCircle2 className="w-16 h-16 text-primary mb-4" />}
-                <h2 className="text-2xl font-semibold text-primary font-headline">{state.message || "Sign up successful!"}</h2>
-                <p className="text-muted-foreground mt-3 text-base">Your spot is secured! We'll email you the moment we go live.</p>
+                {isEarlyBird ? (
+                    <PartyPopper className="w-16 h-16 text-primary mb-4" />
+                ) : (
+                    <CheckCircle2 className="w-16 h-16 text-primary mb-4" />
+                )}
+                <h2 className="text-2xl font-semibold text-primary font-headline">{safeMessage || "Sign up successful!"}</h2>
+                <p className="text-muted-foreground mt-3 text-base">
+                    Your spot is secured! We'll send you an email the moment we go live.
+                </p>
                 {state.referralCode && <ReferralDisplay code={state.referralCode} />}
             </div>
         );
@@ -273,7 +289,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Full Name</FormLabel>
-                            <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
+                            <FormControl>
+                                <Input placeholder="Jane Doe" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -284,7 +302,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Email</FormLabel>
-                            <FormControl><Input type="email" placeholder="name@example.com" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="email" placeholder="name@example.com" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -295,7 +315,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Password</FormLabel>
-                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -306,7 +328,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Confirm Password</FormLabel>
-                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -318,14 +342,26 @@ export function EmailForm() {
                         <FormItem className="space-y-3">
                             <FormLabel className="text-left block">How will you primarily use Sprout?</FormLabel>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                                <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex flex-col space-y-1"
+                                >
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="buyer" /></FormControl>
-                                        <FormLabel className="font-normal">I'm primarily a buyer</FormLabel>
+                                        <FormControl>
+                                            <RadioGroupItem value="buyer" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            I'm primarily a buyer
+                                        </FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="seller" /></FormControl>
-                                        <FormLabel className="font-normal">I'm primarily a seller</FormLabel>
+                                        <FormControl>
+                                            <RadioGroupItem value="seller" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            I'm primarily a seller
+                                        </FormLabel>
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
@@ -339,19 +375,25 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Referral Code (Optional)</FormLabel>
-                            <FormControl><Input placeholder="ABC123" {...field} /></FormControl>
+                            <FormControl>
+                                <Input placeholder="ABC123" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
+
                 <div className="pt-4">
                     <SubmitButton isPending={isPending} />
                     <p className="text-xs text-muted-foreground text-center mt-3 italic">
                         * Currently accepting waitlist sign-ups for <strong>U.S. Residents Only</strong>. *
                     </p>
                 </div>
+
                 {form.formState.errors.root?.serverError && (
-                    <div className="text-destructive text-sm mt-2 text-center">{form.formState.errors.root.serverError.message}</div>
+                    <div className="text-destructive text-sm mt-2 text-center" role="alert">
+                        {form.formState.errors.root.serverError.message}
+                    </div>
                 )}
             </form>
         </Form>
