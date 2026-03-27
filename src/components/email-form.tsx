@@ -56,12 +56,9 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     const cleanName = name.trim();
 
     try {
-        console.log('[email-form.tsx] Starting signup process for:', cleanEmail);
-
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: cleanName });
-        console.log(`[email-form.tsx] Auth user created: ${user.uid}`);
 
         const usersCollection = collection(db, 'users');
 
@@ -72,13 +69,11 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             const referringUserQuery = await getDocs(q);
             if (!referringUserQuery.empty) {
                 referredByUID = referringUserQuery.docs[0].id;
-                console.log(`[email-form.tsx] Valid referral from UID: ${referredByUID}`);
             }
         }
 
         const usersSnapshot = await getCountFromServer(usersCollection);
         const userCount = usersSnapshot.data().count;
-        console.log(`[email-form.tsx] Current user count: ${userCount}`);
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
@@ -88,7 +83,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             rewardTier = 'early_bird_1_month_elite';
             successMessage = "Congratulations! You're one of our first 100 users and get 1 month of the elite plan!";
         } else {
-            successMessage = "You've successfully signed up! While the first 100 spots are taken, you can still get a free month of the elite plan by referring friends.";
             templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
         }
 
@@ -152,28 +146,18 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
                     body: JSON.stringify({ to: cleanEmail, name: cleanName, templateId }),
                 });
             } catch (apiError) {
-                console.warn(`[email-form.tsx] Optional email delivery failed for ${cleanEmail}.`, apiError);
+                console.warn(`[email-form.tsx] Email delivery failed for ${cleanEmail}.`, apiError);
             }
         }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
     } catch (error: any) {
-        console.error('[email-form.tsx] Signup error details:', error);
-
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
-
-        if (error.code?.startsWith('auth/')) {
-            let authMessage = "There was a problem creating your account. Please check your details (like email format) and try again.";
-            if (error.message) {
-                authMessage = error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim();
-            }
-            return { success: false, message: authMessage, timestamp: Date.now() };
-        }
-
-        return { success: false, message: 'Something went wrong on our end. Please try again in a few minutes.', timestamp: Date.now() };
+        const authMessage = error.message?.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim() || 'Something went wrong. Please try again.';
+        return { success: false, message: authMessage, timestamp: Date.now() };
     }
 }
 
@@ -183,7 +167,6 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
             type="submit"
             disabled={isPending}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
-            aria-live="polite"
         >
             {isPending ? (
                 <>
@@ -248,12 +231,10 @@ export function EmailForm() {
         if (storedStateRaw) {
             try {
                 const storedState = JSON.parse(storedStateRaw);
-                if(storedState.success && storedState.referralCode) {
+                if(storedState.success) {
                     setState(storedState);
                 }
-            } catch(e) {
-                console.error("Could not parse stored signup state", e);
-            }
+            } catch(e) {}
         }
     }, []);
 
@@ -266,14 +247,8 @@ export function EmailForm() {
 
     useEffect(() => {
         if (state.timestamp && !state.success) {
-            form.setError("root.serverError", {
-                type: "manual",
-                message: state.message,
-            });
+            form.setError("root.serverError", { message: state.message });
         }
-    }, [state, form]);
-
-    useEffect(() => {
         if (state.success) {
             form.reset();
             localStorage.setItem('sprout_signup_state', JSON.stringify(state));
@@ -281,10 +256,10 @@ export function EmailForm() {
     }, [state, form]);
 
     if (state.success) {
-        const isEarlyBird = state.message.toLowerCase().includes('congratulations');
+        const isEarlyBird = state.message?.toLowerCase().includes('congratulations');
 
         return (
-            <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30" role="alert">
+            <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30">
                 {isEarlyBird ? (
                     <PartyPopper className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
                 ) : (
@@ -308,9 +283,7 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Full Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Jane Doe" {...field} />
-                            </FormControl>
+                            <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -321,9 +294,7 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Email</FormLabel>
-                            <FormControl>
-                                <Input type="email" placeholder="name@example.com" {...field} />
-                            </FormControl>
+                            <FormControl><Input type="email" placeholder="name@example.com" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -334,9 +305,7 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Password</FormLabel>
-                            <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                            </FormControl>
+                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -347,9 +316,7 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Confirm Password</FormLabel>
-                            <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                            </FormControl>
+                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -361,26 +328,14 @@ export function EmailForm() {
                         <FormItem className="space-y-3">
                             <FormLabel className="text-left block">How will you primarily use Sprout?</FormLabel>
                             <FormControl>
-                                <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex flex-col space-y-1"
-                                >
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="buyer" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            I'm primarily a buyer
-                                        </FormLabel>
+                                        <FormControl><RadioGroupItem value="buyer" /></FormControl>
+                                        <FormLabel className="font-normal">I'm primarily a buyer</FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="seller" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            I'm primarily a seller
-                                        </FormLabel>
+                                        <FormControl><RadioGroupItem value="seller" /></FormControl>
+                                        <FormLabel className="font-normal">I'm primarily a seller</FormLabel>
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
@@ -394,9 +349,7 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Referral Code (Optional)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="ABC123" {...field} />
-                            </FormControl>
+                            <FormControl><Input placeholder="ABC123" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -405,12 +358,12 @@ export function EmailForm() {
                 <div className="pt-4">
                     <SubmitButton isPending={isPending} />
                     <p className="text-xs text-muted-foreground text-center mt-3 italic">
-                        * Currently accepting waitlist sign-ups for <strong>U.S. Residents Only</strong>. *
+                        * Currently accepting waitlist sign-ups for **U.S. Residents Only**. *
                     </p>
                 </div>
 
                 {form.formState.errors.root?.serverError && (
-                    <div className="text-destructive text-sm mt-2 text-center" role="alert">
+                    <div className="text-destructive text-sm mt-2 text-center">
                         {form.formState.errors.root.serverError.message}
                     </div>
                 )}
