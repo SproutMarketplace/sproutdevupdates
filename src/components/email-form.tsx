@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2, PartyPopper, Copy, Check, ShieldCheck, RefreshCw } from 'lucide-react';
+import { CheckCircle2, PartyPopper, Copy, Check, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getFirebaseClient } from '@/lib/firebase-client';
 import {
@@ -52,14 +52,12 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     const { name, email, password, userType, referralCode: referralCodeInput } = values;
     const { auth, db } = getFirebaseClient();
 
-    // Trim inputs to prevent accidental spaces from causing validation or auth errors
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
 
     try {
         console.log('[email-form.tsx] Starting signup process for:', cleanEmail);
 
-        // 1. Create user in Auth first to ensure we have a valid session for subsequent Firestore checks
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: cleanName });
@@ -67,7 +65,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
         const usersCollection = collection(db, 'users');
 
-        // 2. Handle referral code lookup (now that user is authenticated)
         let referredByUID: string | null = null;
         if (referralCodeInput && referralCodeInput.trim() !== "") {
             const uppercaseReferralCode = referralCodeInput.trim().toUpperCase();
@@ -79,7 +76,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             }
         }
 
-        // 3. Get user count (now that user is authenticated)
         const usersSnapshot = await getCountFromServer(usersCollection);
         const userCount = usersSnapshot.data().count;
         console.log(`[email-form.tsx] Current user count: ${userCount}`);
@@ -96,7 +92,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
         }
 
-        // 4. Generate a unique referral code
         let newReferralCode: string = '';
         let isCodeUnique = false;
         let attempts = 0;
@@ -110,7 +105,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             attempts++;
         }
 
-        // 5. Atomic transaction to create user doc and update referrer
         await runTransaction(db, async (transaction) => {
             const newUserDocRef = doc(db, 'users', user.uid);
             transaction.set(newUserDocRef, {
@@ -150,7 +144,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             }
         });
 
-        // 6. Optional: Queue welcome email
         if (templateId !== 0) {
             try {
                 await fetch('/api/send-email', {
@@ -168,16 +161,13 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     } catch (error: any) {
         console.error('[email-form.tsx] Signup error details:', error);
 
-        // Check if user already exists
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
 
-        // Provide specific Firebase error messages if available
         if (error.code?.startsWith('auth/')) {
             let authMessage = "There was a problem creating your account. Please check your details (like email format) and try again.";
             if (error.message) {
-                // Clean up standard Firebase messages for user-friendliness
                 authMessage = error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim();
             }
             return { success: false, message: authMessage, timestamp: Date.now() };
@@ -290,12 +280,6 @@ export function EmailForm() {
         }
     }, [state, form]);
 
-    const handleReset = () => {
-        localStorage.removeItem('sprout_signup_state');
-        setState({ success: false, message: '' });
-        form.reset();
-    };
-
     if (state.success) {
         const isEarlyBird = state.message.toLowerCase().includes('congratulations');
 
@@ -311,10 +295,6 @@ export function EmailForm() {
                     Your account is created and your spot is secured! We'll send you an email the moment we go live.
                 </p>
                 {state.referralCode && <ReferralDisplay code={state.referralCode} />}
-                <Button onClick={handleReset} variant="outline" className="mt-6">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Test Another Sign-up
-                </Button>
             </div>
         );
     }
@@ -425,7 +405,7 @@ export function EmailForm() {
                 <div className="pt-4">
                     <SubmitButton isPending={isPending} />
                     <p className="text-xs text-muted-foreground text-center mt-3 italic">
-                        * Currently accepting waitlist sign-ups for <strong className="font-bold">U.S. Residents Only</strong>. *
+                        * Currently accepting waitlist sign-ups for <strong>U.S. Residents Only</strong>. *
                     </p>
                 </div>
 
