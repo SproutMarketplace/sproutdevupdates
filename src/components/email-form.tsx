@@ -77,7 +77,7 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             const usersSnapshot = await getCountFromServer(usersCollection);
             userCount = usersSnapshot.data().count;
         } catch (e) {
-            // Fallback if count fails
+            // Fallback
         }
 
         let rewardTier = 'standard';
@@ -140,7 +140,7 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
                     body: JSON.stringify({ to: cleanEmail, name: cleanName, templateId }),
                 });
             } catch (apiError) {
-                // Optional email failure
+                // Optional email delivery failure
             }
         }
 
