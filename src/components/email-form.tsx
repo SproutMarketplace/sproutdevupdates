@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -14,12 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 import { getFirebaseClient } from '@/lib/firebase-client';
 import {
     createUserWithEmailAndPassword,
-    updateProfile,
-    fetchSignInMethodsForEmail
+    updateProfile
 } from 'firebase/auth';
 import {
     doc,
-    setDoc,
     getDocs,
     collection,
     query,
@@ -29,9 +26,6 @@ import {
     serverTimestamp,
     runTransaction
 } from 'firebase/firestore';
-
-// This is a new client-side action that will handle the signup.
-// import { sendConfirmationEmail } from '@/app/send-email';
 
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -54,81 +48,75 @@ interface FormState {
     referralCode?: string;
 }
 
-// Client-side signup logic
 async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     const { name, email, password, userType, referralCode: referralCodeInput } = values;
     const { auth, db } = getFirebaseClient();
 
-    try {
-        console.log('[email-form.tsx] Starting client-side signup process for:', email);
+    // Trim inputs to prevent accidental spaces from causing validation or auth errors
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
 
-        // 1. Check if user already exists
-        const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-        if (signInMethods.length > 0) {
-            console.log(`[email-form.tsx] User with email ${email} already exists.`);
-            return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
-        }
+    try {
+        console.log('[email-form.tsx] Starting signup process for:', cleanEmail);
+
+        // 1. Create user in Auth first to ensure we have a valid session for subsequent Firestore checks
+        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: cleanName });
+        console.log(`[email-form.tsx] Auth user created: ${user.uid}`);
 
         const usersCollection = collection(db, 'users');
 
-        // Handle referral code transactionally
+        // 2. Handle referral code lookup (now that user is authenticated)
         let referredByUID: string | null = null;
-        if (referralCodeInput) {
-            const uppercaseReferralCode = referralCodeInput.toUpperCase();
-            console.log(`[email-form.tsx] Looking for referring user with code: ${uppercaseReferralCode}`);
+        if (referralCodeInput && referralCodeInput.trim() !== "") {
+            const uppercaseReferralCode = referralCodeInput.trim().toUpperCase();
             const q = query(usersCollection, where('referralCode', '==', uppercaseReferralCode), limit(1));
             const referringUserQuery = await getDocs(q);
             if (!referringUserQuery.empty) {
-                const referringUserDoc = referringUserQuery.docs[0];
-                referredByUID = referringUserDoc.id;
-                console.log(`[email-form.tsx] Found referring user: ${referredByUID}`);
-            } else {
-                console.log(`[email-form.tsx] No user found for referral code: ${uppercaseReferralCode}.`);
+                referredByUID = referringUserQuery.docs[0].id;
+                console.log(`[email-form.tsx] Valid referral from UID: ${referredByUID}`);
             }
         }
 
-        // 2. Get user count
+        // 3. Get user count (now that user is authenticated)
         const usersSnapshot = await getCountFromServer(usersCollection);
         const userCount = usersSnapshot.data().count;
         console.log(`[email-form.tsx] Current user count: ${userCount}`);
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
+        let templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_TEMPLATE_ID || '0');
 
         if (userCount < 100) {
             rewardTier = 'early_bird_1_month_elite';
             successMessage = "Congratulations! You're one of our first 100 users and get 1 month of the elite plan!";
         } else {
             successMessage = "You've successfully signed up! While the first 100 spots are taken, you can still get a free month of the elite plan by referring friends.";
+            templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
         }
 
-        // 3. Create user in Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        await updateProfile(user, { displayName: name });
-        console.log(`[email-form.tsx] Successfully created user in Auth with UID: ${user.uid}`);
-
-        // 4. Generate a unique referral code for the new user
+        // 4. Generate a unique referral code
         let newReferralCode: string = '';
         let isCodeUnique = false;
-        while (!isCodeUnique) {
+        let attempts = 0;
+        while (!isCodeUnique && attempts < 5) {
             newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             const q = query(collection(db, 'users'), where('referralCode', '==', newReferralCode), limit(1));
             const existingCodeQuery = await getDocs(q);
             if (existingCodeQuery.empty) {
                 isCodeUnique = true;
             }
+            attempts++;
         }
-        console.log(`[email-form.tsx] Generated unique referral code: ${newReferralCode}`);
 
-        // 5. Create user document in Firestore and update referrer if applicable
+        // 5. Atomic transaction to create user doc and update referrer
         await runTransaction(db, async (transaction) => {
-            // Set the new user's document
             const newUserDocRef = doc(db, 'users', user.uid);
             transaction.set(newUserDocRef, {
                 userId: user.uid,
-                username: name,
-                email: email,
+                username: cleanName,
+                email: cleanEmail,
                 createdAt: serverTimestamp(),
                 rewardTier: rewardTier,
                 userType: userType,
@@ -144,7 +132,6 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
                 following: [],
             });
 
-            // If a valid referral was used, update the referring user's document
             if (referredByUID) {
                 const referringUserDocRef = doc(db, 'users', referredByUID);
                 const referringUserDoc = await transaction.get(referringUserDocRef);
@@ -156,35 +143,47 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
 
                     if (newReferralCount >= 10) {
                         updates.eliteMonthsEarned = (referringUserData.eliteMonthsEarned || 0) + 1;
-                        updates.referrals = 0; // Reset for the next reward cycle
+                        updates.referrals = 0;
                     }
                     transaction.update(referringUserDocRef, updates);
-                    console.log(`[email-form.tsx] Transactionally updated referrer: ${referredByUID}`);
                 }
             }
         });
 
-        console.log(`[email-form.tsx] Successfully created user profile for ${email}.`);
-
-        // 6. Send confirmation email - REMOVED TO PREVENT SERVER ACTION
-        // try {
-        //     console.log(`[email-form.tsx] Preparing to send confirmation email to ${email}.`);
-        //     await sendConfirmationEmail({ to: email, name: name, templateId: emailTemplateId });
-        //     console.log(`[email-form.tsx] Successfully requested confirmation email for ${email}.`);
-        // } catch (emailError: any) {
-        //     console.error(`[email-form.tsx] Email sending failed.`, emailError);
-        //     successMessage += " (Note: There was an issue sending your confirmation email, but your account is safe!)";
-        // }
+        // 6. Optional: Queue welcome email
+        if (templateId !== 0) {
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: cleanEmail, name: cleanName, templateId }),
+                });
+            } catch (apiError) {
+                console.warn(`[email-form.tsx] Optional email delivery failed for ${cleanEmail}.`, apiError);
+            }
+        }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
     } catch (error: any) {
-        console.error('[email-form.tsx] A critical error occurred in client-side signup:', error);
-        let publicMessage = 'Something went wrong on our end. Please try again later.';
-        if (error.code?.startsWith('auth/')) {
-            publicMessage = "There was a problem creating your account. Please double-check your details.";
+        console.error('[email-form.tsx] Signup error details:', error);
+
+        // Check if user already exists
+        if (error.code === 'auth/email-already-in-use') {
+            return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
-        return { success: false, message: publicMessage, timestamp: Date.now() };
+
+        // Provide specific Firebase error messages if available
+        if (error.code?.startsWith('auth/')) {
+            let authMessage = "There was a problem creating your account. Please check your details (like email format) and try again.";
+            if (error.message) {
+                // Clean up standard Firebase messages for user-friendliness
+                authMessage = error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim();
+            }
+            return { success: false, message: authMessage, timestamp: Date.now() };
+        }
+
+        return { success: false, message: 'Something went wrong on our end. Please try again in a few minutes.', timestamp: Date.now() };
     }
 }
 
@@ -425,6 +424,9 @@ export function EmailForm() {
 
                 <div className="pt-4">
                     <SubmitButton isPending={isPending} />
+                    <p className="text-xs text-muted-foreground text-center mt-3 italic">
+                        * Currently accepting waitlist sign-ups for <strong className="font-bold">U.S. Residents Only</strong>. *
+                    </p>
                 </div>
 
                 {form.formState.errors.root?.serverError && (
@@ -436,4 +438,3 @@ export function EmailForm() {
         </Form>
     );
 }
-
