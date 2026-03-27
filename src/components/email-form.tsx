@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2, PartyPopper, Copy, Check, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, PartyPopper, Copy, Check, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getFirebaseClient } from '@/lib/firebase-client';
 import {
@@ -53,13 +52,16 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     const { name, email, password, userType, referralCode: referralCodeInput } = values;
     const { auth, db } = getFirebaseClient();
 
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanName = (name || '').trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
 
     try {
+        console.log('[email-form.tsx] Starting signup process for:', cleanEmail);
+
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: cleanName });
+        console.log(`[email-form.tsx] Auth user created: ${user.uid}`);
 
         const usersCollection = collection(db, 'users');
 
@@ -70,16 +72,13 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             const referringUserQuery = await getDocs(q);
             if (!referringUserQuery.empty) {
                 referredByUID = referringUserQuery.docs[0].id;
+                console.log(`[email-form.tsx] Valid referral from UID: ${referredByUID}`);
             }
         }
 
-        let userCount = 0;
-        try {
-            const usersSnapshot = await getCountFromServer(usersCollection);
-            userCount = usersSnapshot.data().count;
-        } catch (countError) {
-            console.warn("Could not fetch user count", countError);
-        }
+        const usersSnapshot = await getCountFromServer(usersCollection);
+        const userCount = usersSnapshot.data().count;
+        console.log(`[email-form.tsx] Current user count: ${userCount}`);
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
@@ -89,6 +88,7 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             rewardTier = 'early_bird_1_month_elite';
             successMessage = "Congratulations! You're one of our first 100 users and get 1 month of the elite plan!";
         } else {
+            successMessage = "You've successfully signed up! While the first 100 spots are taken, you can still get a free month of the elite plan by referring friends.";
             templateId = parseInt(process.env.NEXT_PUBLIC_MAILJET_STANDARD_TEMPLATE_ID || '0');
         }
 
@@ -152,21 +152,28 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
                     body: JSON.stringify({ to: cleanEmail, name: cleanName, templateId }),
                 });
             } catch (apiError) {
-                console.warn(`[email-form.tsx] Email delivery failed for ${cleanEmail}.`, apiError);
+                console.warn(`[email-form.tsx] Optional email delivery failed for ${cleanEmail}.`, apiError);
             }
         }
 
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
     } catch (error: any) {
-        console.error("Signup Error:", error);
+        console.error('[email-form.tsx] Signup error details:', error);
+
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
-        const authMessage = typeof error.message === 'string'
-            ? error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim()
-            : 'Something went wrong. Please try again.';
-        return { success: false, message: authMessage, timestamp: Date.now() };
+
+        if (error.code?.startsWith('auth/')) {
+            let authMessage = "There was a problem creating your account. Please check your details (like email format) and try again.";
+            if (error.message) {
+                authMessage = error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim();
+            }
+            return { success: false, message: authMessage, timestamp: Date.now() };
+        }
+
+        return { success: false, message: 'Something went wrong on our end. Please try again in a few minutes.', timestamp: Date.now() };
     }
 }
 
@@ -176,6 +183,7 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
             type="submit"
             disabled={isPending}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
+            aria-live="polite"
         >
             {isPending ? (
                 <>
@@ -197,7 +205,6 @@ function ReferralDisplay({ code }: { code: string }) {
     const { toast } = useToast();
 
     const copyToClipboard = () => {
-        if (!code) return;
         navigator.clipboard.writeText(code);
         setCopied(true);
         toast({ title: "Referral code copied!" });
@@ -237,57 +244,67 @@ export function EmailForm() {
     });
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedStateRaw = localStorage.getItem('sprout_signup_state');
-            if (storedStateRaw) {
-                try {
-                    const storedState = JSON.parse(storedStateRaw);
-                    if(storedState && storedState.success) {
-                        setState(storedState);
-                    }
-                } catch(e) {}
+        const storedStateRaw = localStorage.getItem('sprout_signup_state');
+        if (storedStateRaw) {
+            try {
+                const storedState = JSON.parse(storedStateRaw);
+                if(storedState.success && storedState.referralCode) {
+                    setState(storedState);
+                }
+            } catch(e) {
+                console.error("Could not parse stored signup state", e);
             }
         }
     }, []);
 
     const onSubmit = (data: SignupFormValues) => {
         startTransition(async () => {
-            try {
-                const result = await signUpClientSide(data);
-                setState(result);
-            } catch (e) {
-                console.error("Critical submission error:", e);
-                setState({ success: false, message: "A connection error occurred. Please try again." });
-            }
+            const result = await signUpClientSide(data);
+            setState(result);
         });
     };
 
     useEffect(() => {
-        if (state.timestamp && !state.success && state.message) {
-            form.setError("root.serverError", { message: state.message });
+        if (state.timestamp && !state.success) {
+            form.setError("root.serverError", {
+                type: "manual",
+                message: state.message,
+            });
         }
+    }, [state, form]);
+
+    useEffect(() => {
         if (state.success) {
             form.reset();
             localStorage.setItem('sprout_signup_state', JSON.stringify(state));
         }
     }, [state, form]);
 
+    const handleReset = () => {
+        localStorage.removeItem('sprout_signup_state');
+        setState({ success: false, message: '' });
+        form.reset();
+    };
+
     if (state.success) {
-        const safeMessage = typeof state.message === 'string' ? state.message : "Thank you for signing up!";
-        const isEarlyBird = safeMessage.toLowerCase().includes('congratulations');
+        const isEarlyBird = state.message.toLowerCase().includes('congratulations');
 
         return (
-            <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30">
+            <div className="mt-6 p-6 sm:p-8 bg-secondary/20 rounded-xl shadow-lg flex flex-col items-center text-center border border-primary/30" role="alert">
                 {isEarlyBird ? (
                     <PartyPopper className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
                 ) : (
                     <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-primary mb-4" />
                 )}
-                <h2 className="text-2xl sm:text-3xl font-semibold text-primary font-headline">{safeMessage}</h2>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-primary font-headline">{state.message}</h2>
                 <p className="text-muted-foreground mt-3 text-base sm:text-lg">
                     Your account is created and your spot is secured! We'll send you an email the moment we go live.
                 </p>
                 {state.referralCode && <ReferralDisplay code={state.referralCode} />}
+                <Button onClick={handleReset} variant="outline" className="mt-6">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Test Another Sign-up
+                </Button>
             </div>
         );
     }
@@ -301,7 +318,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Full Name</FormLabel>
-                            <FormControl><Input placeholder="Jane Doe" {...field} /></FormControl>
+                            <FormControl>
+                                <Input placeholder="Jane Doe" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -312,7 +331,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Email</FormLabel>
-                            <FormControl><Input type="email" placeholder="name@example.com" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="email" placeholder="name@example.com" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -323,7 +344,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Password</FormLabel>
-                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -334,7 +357,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Confirm Password</FormLabel>
-                            <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                            <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -346,14 +371,26 @@ export function EmailForm() {
                         <FormItem className="space-y-3">
                             <FormLabel className="text-left block">How will you primarily use Sprout?</FormLabel>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                                <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex flex-col space-y-1"
+                                >
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="buyer" /></FormControl>
-                                        <FormLabel className="font-normal">I'm primarily a buyer</FormLabel>
+                                        <FormControl>
+                                            <RadioGroupItem value="buyer" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            I'm primarily a buyer
+                                        </FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="seller" /></FormControl>
-                                        <FormLabel className="font-normal">I'm primarily a seller</FormLabel>
+                                        <FormControl>
+                                            <RadioGroupItem value="seller" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            I'm primarily a seller
+                                        </FormLabel>
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
@@ -367,7 +404,9 @@ export function EmailForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-left block">Referral Code (Optional)</FormLabel>
-                            <FormControl><Input placeholder="ABC123" {...field} /></FormControl>
+                            <FormControl>
+                                <Input placeholder="ABC123" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -381,7 +420,7 @@ export function EmailForm() {
                 </div>
 
                 {form.formState.errors.root?.serverError && (
-                    <div className="text-destructive text-sm mt-2 text-center">
+                    <div className="text-destructive text-sm mt-2 text-center" role="alert">
                         {form.formState.errors.root.serverError.message}
                     </div>
                 )}
