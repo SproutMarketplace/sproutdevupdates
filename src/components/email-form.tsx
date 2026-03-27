@@ -52,8 +52,8 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
     const { name, email, password, userType, referralCode: referralCodeInput } = values;
     const { auth, db } = getFirebaseClient();
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name.trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanName = (name || '').trim();
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
@@ -72,8 +72,13 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
             }
         }
 
-        const usersSnapshot = await getCountFromServer(usersCollection);
-        const userCount = usersSnapshot.data().count;
+        let userCount = 0;
+        try {
+            const usersSnapshot = await getCountFromServer(usersCollection);
+            userCount = usersSnapshot.data().count;
+        } catch (countError) {
+            console.warn("Could not fetch user count", countError);
+        }
 
         let rewardTier = 'standard';
         let successMessage = "Thanks for signing up! We'll keep you posted.";
@@ -153,10 +158,13 @@ async function signUpClientSide(values: SignupFormValues): Promise<FormState> {
         return { success: true, message: successMessage, referralCode: newReferralCode, timestamp: Date.now() };
 
     } catch (error: any) {
+        console.error("Signup Error:", error);
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "You're already signed up! We'll keep you posted.", timestamp: Date.now() };
         }
-        const authMessage = error.message?.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim() || 'Something went wrong. Please try again.';
+        const authMessage = typeof error.message === 'string'
+            ? error.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim()
+            : 'Something went wrong. Please try again.';
         return { success: false, message: authMessage, timestamp: Date.now() };
     }
 }
@@ -188,6 +196,7 @@ function ReferralDisplay({ code }: { code: string }) {
     const { toast } = useToast();
 
     const copyToClipboard = () => {
+        if (!code) return;
         navigator.clipboard.writeText(code);
         setCopied(true);
         toast({ title: "Referral code copied!" });
@@ -242,8 +251,13 @@ export function EmailForm() {
 
     const onSubmit = (data: SignupFormValues) => {
         startTransition(async () => {
-            const result = await signUpClientSide(data);
-            setState(result);
+            try {
+                const result = await signUpClientSide(data);
+                setState(result);
+            } catch (e) {
+                console.error("Critical submission error:", e);
+                setState({ success: false, message: "A connection error occurred. Please try again." });
+            }
         });
     };
 
@@ -258,7 +272,7 @@ export function EmailForm() {
     }, [state, form]);
 
     if (state.success) {
-        const safeMessage = state.message || "Thank you!";
+        const safeMessage = typeof state.message === 'string' ? state.message : "Thank you for signing up!";
         const isEarlyBird = safeMessage.toLowerCase().includes('congratulations');
 
         return (
